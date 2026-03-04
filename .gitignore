@@ -16,3 +16,21 @@ _site/
 # counterproductive to check this file into the repository.
 # Details at https://github.com/github/pages-gem/issues/768
 Gemfile.lock
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (never commit secrets)
+.env
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+*.pid
+*.seed
+
+# Build output
+dist/
