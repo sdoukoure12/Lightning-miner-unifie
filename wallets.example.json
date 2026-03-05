@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Wallet 1 (Lightning)",
+    "address": "lnbc1…your_lightning_invoice_here",
+    "type": "lightning",
+    "pool": "braiins",
+    "worker": "rig1",
+    "threshold": 0.0005
+  },
+  {
+    "name": "Wallet 2 (Bitcoin On-Chain)",
+    "address": "bc1q…your_onchain_address_here",
+    "type": "onchain",
+    "pool": "mara",
+    "worker": "rig2",
+    "threshold": 0.005
+  }
+]

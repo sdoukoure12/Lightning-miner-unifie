@@ -1,68 +1,20 @@
-// lightning-miner-v2.js
+// lightning-miner-unifie.js
 const axios = require('axios');
 const fs = require('fs');
 const readline = require('readline');
 const { exec } = require('child_process');
+const { resolveWallets, isValidAddress } = require('./config');
 
-class LightningMinerV2 {
+/**
+ * LightningMinerUnified – manages multiple Bitcoin/Lightning wallets across
+ * various mining pools.  Wallet configuration is loaded at start-up from
+ * environment variables or a `wallets.json` file; no addresses are hard-coded
+ * in source.
+ */
+class LightningMinerUnified {
     constructor() {
-        // === TES 6 ADRESSES (5 Lightning + 1 Bitcoin) ===
-        this.wallets = [
-            { 
-                name: 'Adresse 1 (Lightning)',
-                address: 'lnbc1p5e8qvdpp52jw5mlsl2mhteds92w6436fjz0s6dayc8vp2kzcxx39wve5saahsdqqcqzzsxqyz5vqsp5glrrjtkea0pvvj4a2mn4jmvzadjnf9yzlvn8yh4q3zqszfh9kq4q9qxpqysgq5smw5swlkph74rw0zku7s28e0zmknqpva6qmewj37vlkxx0n7u5s5lqjsrc8j6ezh7ygdygmcctkxudfde9th0v7c60zc7ekdj5j87qq05g3ja',
-                type: 'lightning',
-                pool: 'braiins',
-                worker: 'rig1',
-                btc: 0,
-                threshold: 0.0005
-            },
-            { 
-                name: 'Adresse 2 (Lightning)',
-                address: 'lnbc1p5e8qw3pp5q66dr8zgltdj0zyc2gd5qq0xhmn3hnv0ynaxv0fq0rf23g2x6trsdqqcqzzsxqyz5vqsp55uk9hnwv9mqfmgvkknam7gzmwvpge73z082a0n8tmzzeyd59hdzq9qxpqysgqfnhlhymut3arkkqn3zukq9fqyhdcpptqtv5tj53lxkqjee7fetjhlfwpyvdzx4a29c73qfeqctv9ga0la7dpdyfh2yc2nnnw4xw0cygpggaxqn',
-                type: 'lightning',
-                pool: 'viabtc',
-                worker: 'rig2',
-                btc: 0,
-                threshold: 0.001
-            },
-            { 
-                name: 'Adresse 3 (Lightning)',
-                address: 'lnbc1p5e8q3kpp555jcw47mfke9xeupmqegse3z2wd0qy9t0h4sfd6k4x6x0lhkqcnsdqqcqzzsxqyz5vqsp5g58gc8ntkcfacs9vs3tkuqfnmsu7e3jn8hkadmywe9q3gh4jtd3s9qxpqysgqjq2qjykyhn2kqu9gg6rz8quzegccvkttrl4wq3964lr6eqlv565n5lfz6le9cy7n5tygd55hnnzm56nx2h72p6ae3j8x26cgzcmrf6sqavhl38',
-                type: 'lightning',
-                pool: 'f2pool',
-                worker: 'rig3',
-                btc: 0,
-                threshold: 0.005
-            },
-            { 
-                name: 'Adresse 4 (Lightning)',
-                address: 'lnbc1p5e8qjdpp5l8sr4a4q5trun88z2y3ev2trzkahfw0vf3dlhsxl9refn07kszjsdqqcqzzsxqyz5vqsp5ul6rvy0mdqkh0wqyhyzaqye7hna669mjk8r5dxp7wz78yd33rc0q9qxpqysgqx2gmze7lmefs0dyrfqcqxfxk5fdghzaqsz7ne9lj6clewfkwttlqrcrprtc83q9etdj4kyv2x7yda95jc9ng6q9npet3u2r6f8emcccq5qyxhr',
-                type: 'lightning',
-                pool: 'binance',
-                worker: 'rig4',
-                btc: 0,
-                threshold: 0.001
-            },
-            { 
-                name: 'Adresse 5 (Lightning)',
-                address: 'lnbc1p5e8qn5pp525n02xw45fp0g6r98d6sq02c6q592aeawcvkkehjp5tdvsw7kx7sdqqcqzzsxqyz5vqsp5e8dhrl387n89urw2tfn9eqjath3qsjk6e33307v68s7kmur9nj9s9qxpqysgqreuszlz9lcua5sgg3x4mek30u4dhf5auq5l3rcy2zn4h89mc0ys5zdglzlkgxk05az7xw99e4634z6deqtehlcer9yk2hcr93d9gwrqpnw363h',
-                type: 'lightning',
-                pool: 'luxor',
-                worker: 'rig5',
-                btc: 0,
-                threshold: 0.001
-            },
-            { 
-                name: 'Adresse 6 (Bitcoin On-Chain)',
-                address: 'bc1qv8qhuuk3j0gcunm4pq87rsp88rykr3lfcw07u0',
-                type: 'onchain',
-                pool: 'mara',
-                worker: 'rig6',
-                btc: 0,
-                threshold: 0.005
-            }
-        ];
+        // Load wallets from configuration (env vars or wallets.json)
+        this.wallets = this._initWallets();
 
         // === 8 POOLS AVEC LEURS CARACTÉRISTIQUES ===
         this.pools = {
@@ -164,7 +116,46 @@ class LightningMinerV2 {
         };
 
         this.miningProcess = null;
-        this.configFile = '/sdcard/lightning-miner-v2-config.json';
+        this.configFile = process.env.CONFIG_FILE || '/sdcard/lightning-miner-config.json';
+    }
+
+    /**
+     * Initialise the wallet list from environment variables or wallets.json.
+     * Each entry is normalised to include `btc: 0` if not already present.
+     * @returns {Array<Object>} Array of wallet objects.
+     */
+    _initWallets() {
+        const loaded = resolveWallets();
+        if (loaded.length === 0) {
+            console.warn('[LightningMinerUnified] No wallets loaded. ' +
+                'Create wallets.json or set WALLET_1 … WALLET_N environment variables.');
+        }
+        return loaded.map(w => Object.assign({ btc: 0 }, w));
+    }
+
+    /**
+     * Add a wallet at runtime.
+     * @param {Object} wallet - Wallet configuration object (must include `address`).
+     * @returns {boolean} True if the wallet was added, false if validation failed.
+     */
+    addWallet(wallet) {
+        if (!wallet || !isValidAddress(wallet.address)) {
+            console.error('[LightningMinerUnified] addWallet: invalid address.');
+            return false;
+        }
+        this.wallets.push(Object.assign({ btc: 0 }, wallet));
+        return true;
+    }
+
+    /**
+     * Remove a wallet at runtime by address.
+     * @param {string} address - The wallet address to remove.
+     * @returns {boolean} True if a wallet was removed.
+     */
+    removeWallet(address) {
+        const before = this.wallets.length;
+        this.wallets = this.wallets.filter(w => w.address !== address);
+        return this.wallets.length < before;
     }
 
     // Affichage du menu principal
@@ -175,7 +166,8 @@ class LightningMinerV2 {
             output: process.stdout
         });
 
-        console.log('\n=== ⚡ LIGHTNING MINER V2 - 6 ADRESSES ⚡ ===');
+        const count = this.wallets.length;
+        console.log(`\n=== ⚡ LIGHTNING MINER UNIFIÉ - ${count} ADRESSE(S) ⚡ ===`);
         console.log('1. 📋 Voir toutes mes adresses');
         console.log('2. 🔄 Changer de pool pour une adresse');
         console.log('3. 📊 Voir les statistiques en temps réel');
@@ -207,16 +199,23 @@ class LightningMinerV2 {
 
     // Afficher toutes les adresses avec leurs soldes
     showAllAddresses() {
-        console.log('\n📋 VOS 6 ADRESSES (5 Lightning + 1 On-Chain)');
+        const count = this.wallets.length;
+        console.log(`\n📋 VOS ${count} ADRESSE(S) CONFIGURÉE(S)`);
         console.log('==============================================');
-        
+
+        if (count === 0) {
+            console.log('⚠️  Aucune adresse configurée. Créez wallets.json ou définissez WALLET_1 … WALLET_N.');
+            return;
+        }
+
         let total = 0;
         this.wallets.forEach((wallet, index) => {
             const typeIcon = wallet.type === 'lightning' ? '⚡' : '🔗';
             console.log(`\n${typeIcon} ${wallet.name}:`);
             console.log(`   📍 ${wallet.address.substring(0, 50)}...`);
             console.log(`   🔧 Worker: ${wallet.worker}`);
-            console.log(`   🌐 Pool: ${this.pools[wallet.pool].name}`);
+            const pool = this.pools[wallet.pool];
+            console.log(`   🌐 Pool: ${pool ? pool.name : wallet.pool}`);
             console.log(`   💰 BTC: ${wallet.btc.toFixed(8)} (${Math.floor(wallet.btc*100000000)} sats)`);
             if (wallet.type === 'lightning') {
                 console.log(`   ⚡ Paiement Lightning possible à partir de 1 satoshi`);
@@ -256,7 +255,7 @@ class LightningMinerV2 {
             output: process.stdout
         });
         
-        rl.question('\nChoisir une adresse (1-6): ', (addrIdx) => {
+        rl.question(`\nChoisir une adresse (1-${this.wallets.length}): `, (addrIdx) => {
             const idx = parseInt(addrIdx) - 1;
             if (idx < 0 || idx >= this.wallets.length) {
                 console.log('❌ Adresse invalide');
@@ -287,8 +286,9 @@ class LightningMinerV2 {
     // Démarrer la simulation de minage
     startMining() {
         console.clear();
+        const count = this.wallets.length;
         console.log('\n=== ⚡ MINAGE SIMULÉ DÉMARRÉ ⚡ ===');
-        console.log('✅ 6 adresses actives');
+        console.log(`✅ ${count} adresse(s) active(s)`);
         console.log('✅ Pools configurés individuellement');
         console.log('✅ Paiements automatiques aux seuils');
         console.log('📊 Mise à jour toutes les 5 secondes\n');
@@ -297,7 +297,8 @@ class LightningMinerV2 {
             // Simuler des gains pour chaque adresse
             this.wallets.forEach(wallet => {
                 const pool = this.pools[wallet.pool];
-                const gain = 0.000000015 * pool.multiplier * Math.random();
+                const multiplier = pool ? pool.multiplier : 1.0;
+                const gain = 0.000000015 * multiplier * Math.random();
                 wallet.btc += gain;
                 this.stats.shares++;
             });
@@ -315,15 +316,17 @@ class LightningMinerV2 {
     // Afficher les stats pendant le minage
     displayMiningStats() {
         console.clear();
-        console.log('=== ⚡ MINAGE EN COURS - 6 ADRESSES ⚡ ===');
+        console.log(`=== ⚡ MINAGE EN COURS - ${this.wallets.length} ADRESSE(S) ⚡ ===`);
         console.log(`📅 ${new Date().toLocaleString()}`);
         
         let total = 0;
         this.wallets.forEach((wallet, index) => {
             const sats = Math.floor(wallet.btc * 100000000);
-            const seuil = this.pools[wallet.pool].threshold;
+            const pool = this.pools[wallet.pool];
+            const seuil = pool ? pool.threshold : (wallet.threshold || 0);
+            const poolName = pool ? pool.name : wallet.pool;
             const depasse = wallet.btc >= seuil ? '🎯 SEUIL ATTEINT!' : '';
-            console.log(`\n${index+1}. ${wallet.name} (${this.pools[wallet.pool].name}):`);
+            console.log(`\n${index+1}. ${wallet.name} (${poolName}):`);
             console.log(`   💰 ${wallet.btc.toFixed(8)} BTC (${sats} sats) ${depasse}`);
             total += wallet.btc;
         });
@@ -364,7 +367,11 @@ class LightningMinerV2 {
         console.log('=================================');
         this.wallets.forEach((wallet, i) => {
             const pool = this.pools[wallet.pool];
-            console.log(`${i+1}. ${wallet.name} → ${pool.threshold} BTC (pool ${pool.name})`);
+            if (pool) {
+                console.log(`${i+1}. ${wallet.name} → ${pool.threshold} BTC (pool ${pool.name})`);
+            } else {
+                console.log(`${i+1}. ${wallet.name} → ${wallet.threshold || 'N/A'} BTC (pool inconnu: ${wallet.pool})`);
+            }
         });
         console.log('\n⚡ Pour les adresses Lightning, tu peux retirer à partir de 1 satoshi sur Braiins.');
         console.log('🔗 Pour les adresses on-chain, les seuils sont ceux du pool choisi.\n');
@@ -411,8 +418,8 @@ class LightningMinerV2 {
         console.log('Pour pousser ce script sur GitHub, exécute :\n');
         console.log('cd ~/lightning-miner');
         console.log('git init');
-        console.log('git add lightning-miner-v2.js');
-        console.log('git commit -m "Ajout du script complet avec 6 adresses"');
+        console.log('git add lightning-miner-unifie.js');
+        console.log('git commit -m "Ajout du script unifié"');
         console.log('git branch -M main');
         console.log('git remote add origin https://github.com/sdoukoure12/lightning-miner.git');
         console.log('git push -u origin main\n');
@@ -429,12 +436,16 @@ class LightningMinerV2 {
     }
 }
 
-// LANCEMENT
-const miner = new LightningMinerV2();
+module.exports = LightningMinerUnified;
 
-process.on('SIGINT', () => {
-    miner.stopMining();
-    process.exit();
-});
+// Only run the interactive menu when executed directly (not when required as a module)
+if (require.main === module) {
+    const miner = new LightningMinerUnified();
 
-miner.showMenu();
+    process.on('SIGINT', () => {
+        miner.stopMining();
+        process.exit();
+    });
+
+    miner.showMenu();
+}
