@@ -16,3 +16,15 @@ _site/
 # counterproductive to check this file into the repository.
 # Details at https://github.com/github/pages-gem/issues/768
 Gemfile.lock
+
+# Environment variables – never commit secrets
+.env
+
+# Wallet configuration – contains sensitive address data; use wallets.example.json as template
+wallets.json
+
+# Node.js dependencies
+node_modules/
+
+# Runtime backup files
+*.autobackup.json
