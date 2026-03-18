@@ -19,12 +19,31 @@ Gemfile.lock
 
 # Environment variables – never commit secrets
 .env
+.env.*
+!.env.example
+!.env.*.example
 
 # Wallet configuration – contains sensitive address data; use wallets.example.json as template
 wallets.json
 
 # Node.js dependencies
 node_modules/
+
+# Build output
+build/
+dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
 
 # Runtime backup files
 *.autobackup.json
