@@ -1,24 +1,5 @@
-# This .gitignore is appropriate for repositories deployed to GitHub Pages and using
-# a Gemfile as specified at https://github.com/github/pages-gem#conventional
-
-# Basic Jekyll gitignores (synchronize to Jekyll.gitignore)
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
-
-# Additional Ruby/bundler ignore for when you run: bundle install
-/vendor
-
-# Specific ignore for GitHub Pages
-# GitHub Pages will always use its own deployed version of pages-gem 
-# This means GitHub Pages will NOT use your Gemfile.lock and therefore it is
-# counterproductive to check this file into the repository.
-# Details at https://github.com/github/pages-gem/issues/768
-Gemfile.lock
-
-# Environment variables – never commit secrets
-.env
+# Environment variables – never commit secrets (.env, .env.local, .env.production, …)
+.env*
 
 # Wallet configuration – contains sensitive address data; use wallets.example.json as template
 wallets.json
@@ -26,5 +7,17 @@ wallets.json
 # Node.js dependencies
 node_modules/
 
+# Build output
+dist/
+
 # Runtime backup files
 *.autobackup.json
+
+# OS / editor artifacts
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

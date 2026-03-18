@@ -1,5 +1,32 @@
 # Politique de Sécurité
 
+## Developer Setup Guide
+
+### Quick start
+
+```bash
+# 1. Copy the environment variable template
+cp .env.example .env
+
+# 2. Edit .env with your real values – this file is git-ignored and must never be committed
+nano .env   # or your preferred editor
+
+# 3. Install dependencies
+npm install
+
+# 4. Start the development server
+npm start
+```
+
+### Security checklist before first run
+
+- [ ] `.env` file created from `.env.example` (never committed)
+- [ ] `JWT_SECRET` replaced with a strong random string (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+- [ ] All placeholder values (`your_*`) replaced with real credentials
+- [ ] `wallets.json` created from `wallets.example.json` (never committed)
+
+---
+
 ## Sécurité et Responsabilité
 
 Nous prenons la sécurité très au sérieux. Ce document décrit comment signaler les vulnérabilités de sécurité et les bonnes pratiques à suivre.

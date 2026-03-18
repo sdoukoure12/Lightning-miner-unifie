@@ -90,22 +90,22 @@ function resolveWallets() {
 
 const config = {
     btcpay: {
-        server: process.env.BTCPAY_SERVER || 'YOUR_BTCPAY_SERVER_URL',
-        apiKey: process.env.BTCPAY_API_KEY || 'YOUR_BTCPAY_API_KEY',
-        token: process.env.BTCPAY_TOKEN || 'YOUR_BTCPAY_TOKEN'
+        server: process.env.BTCPAY_SERVER || '',
+        apiKey: process.env.BTCPAY_API_KEY || '',
+        token: process.env.BTCPAY_TOKEN || ''
     },
     database: {
-        host: process.env.DB_HOST || 'YOUR_DATABASE_HOST',
-        user: process.env.DB_USER || 'YOUR_DATABASE_USER',
-        password: process.env.DB_PASS || 'YOUR_DATABASE_PASSWORD',
-        name: process.env.DB_NAME || 'YOUR_DATABASE_NAME'
+        host: process.env.DB_HOST || '',
+        user: process.env.DB_USER || '',
+        password: process.env.DB_PASS || '',
+        name: process.env.DB_NAME || ''
     },
     lightningNetwork: {
         network: process.env.LN_NETWORK || 'mainnet',
         lnd: {
-            host: process.env.LND_HOST || 'YOUR_LND_HOST',
-            macaroon: process.env.LND_MACAROON || 'YOUR_LND_MACAROON',
-            cert: process.env.LND_CERT || 'YOUR_LND_CERT'
+            host: process.env.LND_HOST || '',
+            macaroon: process.env.LND_MACAROON || '',
+            cert: process.env.LND_CERT || ''
         }
     },
     /** Path searched for wallets.json when no env vars supply wallets. */
