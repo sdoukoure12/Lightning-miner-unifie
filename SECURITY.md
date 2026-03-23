@@ -26,6 +26,33 @@ Si vous découvrez une faille de sécurité, **NE LA PUBLIEZ PAS** sur GitHub Is
 5. 📢 Publication du correctif
 6. 📋 Divulgation coordonnée
 
+## Configuration Initiale (Setup)
+
+### 1. Variables d'environnement
+
+```bash
+# Copier le template
+cp .env.example .env
+
+# Éditer avec vos vraies valeurs (NE JAMAIS commiter ce fichier !)
+nano .env
+```
+
+### 2. Variables requises
+
+| Variable | Description | Exemple |
+|----------|-------------|---------|
+| `NODE_ENV` | Environnement d'exécution | `development` ou `production` |
+| `API_PORT` | Port de l'API | `3000` |
+| `MONGO_URI` | URI de connexion MongoDB | `mongodb+srv://user:pass@cluster/db` |
+| `JWT_SECRET` | Clé secrète JWT (min. 32 caractères) | Générer avec `openssl rand -hex 32` |
+| `JWT_EXPIRATION` | Durée de validité des tokens | `7d` |
+| `API_KEY` | Clé API externe | Obtenir depuis le fournisseur |
+
+### 3. ⚠️ Ne jamais commiter `.env`
+
+Le fichier `.env` est exclu via `.gitignore`. Utilisez toujours `.env.example` comme template partagé.
+
 ## Bonnes Pratiques de Sécurité
 
 ### Pour les utilisateurs
@@ -109,8 +136,10 @@ npm audit --audit-level=moderate
 ## Checklist Sécurité Avant Production
 
 - [ ] Fichier `.env` avec variables sécurisées
+- [ ] `.env` absent du dépôt Git (`git status` ne doit pas le lister)
 - [ ] HTTPS activé
-- [ ] JWT_SECRET changé
+- [ ] JWT_SECRET changé (valeur aléatoire forte)
+- [ ] MONGO_URI avec credentials de production
 - [ ] Database authentifiée
 - [ ] Rate limiting activé
 - [ ] CORS correctement configuré
@@ -118,6 +147,48 @@ npm audit --audit-level=moderate
 - [ ] Logs sans données sensibles
 - [ ] Backups en place
 - [ ] Monitoring actif
+
+## Guide de Déploiement
+
+### Variables d'environnement en production
+
+**Heroku :**
+```bash
+heroku config:set NODE_ENV=production
+heroku config:set MONGO_URI="mongodb+srv://user:pass@cluster/db"
+# Generate JWT_SECRET with: openssl rand -hex 32
+heroku config:set JWT_SECRET="your_strong_secret"
+heroku config:set API_PORT=3000
+```
+
+**Vercel :**
+```bash
+vercel env add MONGO_URI
+vercel env add JWT_SECRET
+vercel env add NODE_ENV
+```
+
+**Docker :**
+```bash
+docker run --env-file .env.production your-image
+```
+
+**Variables système (Linux/macOS) :**
+```bash
+export NODE_ENV=production
+export MONGO_URI="mongodb+srv://user:pass@cluster/db"
+export JWT_SECRET="your_strong_secret"
+```
+
+### Générer un JWT_SECRET sécurisé
+
+```bash
+# Linux / macOS
+openssl rand -hex 32
+
+# Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
 ## Divulgation Responsable
 
